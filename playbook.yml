@@ -42,12 +42,6 @@
           - software-properties-common
         state: present
 
-    - name: Install tree-sitter-cli via cargo
-      ansible.builtin.shell:
-        cmd: cargo install tree-sitter-cli
-        creates: /home/{{ username }}/.cargo/bin/tree-sitter
-      become_user: "{{ username }}"
-
     # ── uv (Python package & project manager) ─────────────────
     - name: Install uv via official installer
       ansible.builtin.shell:
