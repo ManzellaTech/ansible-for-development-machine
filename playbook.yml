@@ -1,0 +1,321 @@
+---
+- name: Set up development laptop
+  hosts: local
+  become: true
+
+  vars:
+    username: nmanzella
+
+  tasks:
+    # ── User ──────────────────────────────────────────────────
+    - name: "Create user {{ username }}"
+      ansible.builtin.user:
+        name: "{{ username }}"
+        shell: /bin/bash
+        create_home: true
+        state: present
+
+    # ── Ubuntu Packages ──────────────────────────────────────────
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+
+    - name: Install packages
+      ansible.builtin.apt:
+        name:
+          - ca-certificates
+          - curl
+          - gnupg
+          - tree
+          - vim
+          - ripgrep
+          - fzf
+          - fd-find
+          - gcc
+          - git
+          - make
+          - unzip
+          - curl
+          - cargo
+          - wget
+          - apt-transport-https
+          - software-properties-common
+        state: present
+
+    - name: Install tree-sitter-cli via cargo
+      ansible.builtin.shell:
+        cmd: cargo install tree-sitter-cli
+        creates: /home/{{ username }}/.cargo/bin/tree-sitter
+      become_user: "{{ username }}"
+
+    # ── uv (Python package & project manager) ─────────────────
+    - name: Install uv via official installer
+      ansible.builtin.shell:
+        cmd: curl -LsSf https://astral.sh/uv/install.sh | sh
+        creates: /home/{{ username }}/.local/bin/uv
+      become_user: "{{ username }}"
+      environment:
+        INSTALLER_NO_MODIFY_PATH: "1"
+
+    # ── Neovim ────────────────────────────────────────────────
+    - name: Add Neovim stable PPA
+      ansible.builtin.apt_repository:
+        repo: ppa:neovim-ppa/stable
+        state: present
+
+    - name: Install Neovim
+      ansible.builtin.apt:
+        name: neovim
+        state: present
+
+    # ── LazyVim (Neovim configuration) ───────────────────────
+    - name: Clone LazyVim starter into Neovim config
+      ansible.builtin.git:
+        repo: https://github.com/LazyVim/starter.git
+        dest: /home/{{ username }}/.config/nvim
+        depth: 1
+      become_user: "{{ username }}"
+
+    - name: Remove .git directory from LazyVim starter
+      ansible.builtin.file:
+        path: /home/{{ username }}/.config/nvim/.git
+        state: absent
+
+    - name: Set space as leader key in init.lua
+      ansible.builtin.blockinfile:
+        path: /home/{{ username }}/.config/nvim/init.lua
+        marker: "-- {mark} LEADER KEY"
+        block: |
+          vim.g.mapleader = " "
+          vim.g.maplocalleader = " "
+        insertbefore: BOF
+        owner: "{{ username }}"
+        group: "{{ username }}"
+
+    - name: Add Mason setup to init.lua
+      ansible.builtin.blockinfile:
+        path: /home/{{ username }}/.config/nvim/init.lua
+        marker: "-- {mark} MASON SETUP"
+        block: |
+          require("mason").setup()
+          require("mason-lspconfig").setup()
+        owner: "{{ username }}"
+        group: "{{ username }}"
+
+    # ── Pyrefly LSP ──────────────────────────────────────────
+    - name: Install pyrefly via uv
+      ansible.builtin.shell:
+        cmd: /home/{{ username }}/.local/bin/uv tool install pyrefly
+        creates: /home/{{ username }}/.local/bin/pyrefly
+      become_user: "{{ username }}"
+
+    - name: Configure pyrefly LSP in LazyVim
+      ansible.builtin.copy:
+        dest: /home/{{ username }}/.config/nvim/lua/plugins/pyrefly.lua
+        owner: "{{ username }}"
+        group: "{{ username }}"
+        mode: "0644"
+        content: |
+          return {
+            {
+              "neovim/nvim-lspconfig",
+              opts = {
+                servers = {
+                  pyrefly = {},
+                },
+              },
+            },
+          }
+
+    # ── Set NeoVim as the default editor ───────────────────────
+    - name: Set nvim as default editor in bashrc
+      ansible.builtin.lineinfile:
+        path: /home/{{ username }}/.bashrc
+        line: export EDITOR=nvim
+        regexp: ^export EDITOR=
+        owner: "{{ username }}"
+        group: "{{ username }}"
+
+    - name: Set nvim as default visual editor in bashrc
+      ansible.builtin.lineinfile:
+        path: /home/{{ username }}/.bashrc
+        line: export VISUAL=nvim
+        regexp: ^export VISUAL=
+        owner: "{{ username }}"
+        group: "{{ username }}"
+
+    # Removing VS Code, this section has not been tested.
+    # # ── VS Code ───────────────────────────────────────────────
+    # - name: Install VS Code prerequisites
+    #   ansible.builtin.apt:
+    #     name:
+    #       - apt-transport-https
+    #       - wget
+    #       - gpg
+    #     state: present
+
+    # - name: Add Microsoft GPG key
+    #   ansible.builtin.shell:
+    #     cmd: wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /usr/share/keyrings/packages.microsoft.gpg
+    #     creates: /usr/share/keyrings/packages.microsoft.gpg
+
+    # - name: Set permissions on Microsoft GPG key
+    #   ansible.builtin.file:
+    #     path: /usr/share/keyrings/packages.microsoft.gpg
+    #     mode: "0644"
+
+    # - name: Add VS Code repository
+    #   ansible.builtin.apt_repository:
+    #     repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main"
+    #     filename: vscode
+    #     state: present
+
+    # - name: Install VS Code
+    #   ansible.builtin.apt:
+    #     name: code
+    #     state: present
+    #     update_cache: true
+
+    # ── PowerShell ────────────────────────────────────────────
+    - name: Download Microsoft repository keys package
+      ansible.builtin.get_url:
+        url: "https://packages.microsoft.com/config/ubuntu/{{ ansible_distribution_version }}/packages-microsoft-prod.deb"
+        dest: /tmp/packages-microsoft-prod.deb
+        mode: "0644"
+
+    - name: Register Microsoft repository keys
+      ansible.builtin.apt:
+        deb: /tmp/packages-microsoft-prod.deb
+        state: present
+
+    - name: Remove Microsoft repository keys file
+      ansible.builtin.file:
+        path: /tmp/packages-microsoft-prod.deb
+        state: absent
+
+    - name: Install PowerShell
+      ansible.builtin.apt:
+        name: powershell
+        state: present
+        update_cache: true
+
+    - name: Install Az PowerShell module
+      ansible.builtin.command:
+        cmd: pwsh -NoProfile -NonInteractive -Command "Install-Module -Name Az -Force -AcceptLicense -Scope AllUsers"
+        creates: /opt/microsoft/powershell/7/Modules/Az
+
+    # ── JetBrainsMono Nerd Font ─────────────────────────────────
+    - name: Ensure user fonts directory exists
+      ansible.builtin.file:
+        path: /home/{{ username }}/.local/share/fonts
+        state: directory
+        owner: "{{ username }}"
+        group: "{{ username }}"
+        mode: "0755"
+
+    - name: Download JetBrainsMono Nerd Font
+      ansible.builtin.unarchive:
+        src: https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.tar.xz
+        dest: /home/{{ username }}/.local/share/fonts
+        remote_src: true
+        creates: /home/{{ username }}/.local/share/fonts/JetBrainsMonoNerdFont-Regular.ttf
+      become_user: "{{ username }}"
+
+    - name: Rebuild font cache
+      ansible.builtin.command:
+        cmd: fc-cache -fv /home/{{ username }}/.local/share/fonts
+      become_user: "{{ username }}"
+      changed_when: false
+
+    # ── Kitty terminal ─────────────────────────────────────────
+    - name: Install Kitty terminal
+      ansible.builtin.apt:
+        name: kitty
+        state: present
+
+    - name: Ensure Kitty config directory exists
+      ansible.builtin.file:
+        path: /home/{{ username }}/.config/kitty
+        state: directory
+        owner: "{{ username }}"
+        group: "{{ username }}"
+        mode: "0755"
+
+    - name: Clone Kitty themes repository
+      ansible.builtin.git:
+        repo: https://github.com/kovidgoyal/kitty-themes.git
+        dest: /home/{{ username }}/.config/kitty/kitty-themes
+        depth: 1
+      become_user: "{{ username }}"
+
+    - name: Symlink Gruvbox Dark theme
+      ansible.builtin.file:
+        src: /home/{{ username }}/.config/kitty/kitty-themes/themes/gruvbox_dark.conf
+        dest: /home/{{ username }}/.config/kitty/current-theme.conf
+        state: link
+        owner: "{{ username }}"
+        group: "{{ username }}"
+
+    - name: Set Kitty as default terminal emulator
+      community.general.alternatives:
+        name: x-terminal-emulator
+        path: /usr/bin/kitty
+
+    - name: Configure Kitty to use Gruvbox theme
+      ansible.builtin.copy:
+        dest: /home/{{ username }}/.config/kitty/kitty.conf
+        owner: "{{ username }}"
+        group: "{{ username }}"
+        mode: "0644"
+        content: |
+          include current-theme.conf
+          font_family JetBrainsMono Nerd Font
+        force: false
+
+
+    # ── Docker ────────────────────────────────────────────────
+    - name: Ensure /etc/apt/keyrings directory exists
+      ansible.builtin.file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: "0755"
+
+    - name: Download Docker GPG key
+      ansible.builtin.get_url:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        dest: /etc/apt/keyrings/docker.asc
+        mode: "0644"
+
+    - name: Add Docker repository in DEB822 format
+      ansible.builtin.copy:
+        dest: /etc/apt/sources.list.d/docker.sources
+        mode: "0644"
+        content: |
+          Types: deb
+          URIs: https://download.docker.com/linux/ubuntu
+          Suites: {{ ansible_distribution_release }}
+          Components: stable
+          Signed-By: /etc/apt/keyrings/docker.asc
+
+    - name: Install Docker
+      ansible.builtin.apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+        state: present
+        update_cache: true
+
+    - name: Enable and start Docker service
+      ansible.builtin.systemd:
+        name: docker
+        enabled: true
+        state: started
+
+    - name: "Add {{ username }} to docker group"
+      ansible.builtin.user:
+        name: "{{ username }}"
+        groups: docker
+        append: true

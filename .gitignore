@@ -1,0 +1,9 @@
+### Secrets ###
+.env
+
+### Ansible ###
+# Ignore temporary retry files
+*.retry
+
+# Ignore the implicit cache dir
+.ansible/ 
