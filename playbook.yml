@@ -52,9 +52,15 @@
         INSTALLER_NO_MODIFY_PATH: "1"
 
     # ── Neovim ────────────────────────────────────────────────
+    - name: Download Neovim PPA signing key
+      ansible.builtin.get_url:
+        url: https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x9DBB0BE9366964F134855E2255F96FCF8231B6DD
+        dest: /etc/apt/keyrings/neovim-ppa.asc
+        mode: "0644"
+
     - name: Add Neovim stable PPA
       ansible.builtin.apt_repository:
-        repo: ppa:neovim-ppa/stable
+        repo: "deb [signed-by=/etc/apt/keyrings/neovim-ppa.asc] http://ppa.launchpad.net/neovim-ppa/stable/ubuntu {{ ansible_distribution_release }} main"
         state: present
 
     - name: Install Neovim
