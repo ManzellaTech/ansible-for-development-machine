@@ -3,9 +3,6 @@
   hosts: local
   become: true
 
-  vars:
-    username: nmanzella
-
   tasks:
     # ── User ──────────────────────────────────────────────────
     - name: "Create user {{ username }}"
