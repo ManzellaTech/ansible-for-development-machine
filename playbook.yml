@@ -107,23 +107,23 @@
         backrefs: yes
 
     # ── Pyrefly LSP ──────────────────────────────────────────
-    - name: Add pyrefly to Mason ensure_installed
-      ansible.builtin.lineinfile:
-        path: /home/{{ username }}/.config/nvim/init.lua
-        regexp: "ensure_installed = \\{.*'pyrefly'"
-        insertafter: "ensure_installed = \\{"
-        line: "        'pyrefly',"
-        owner: "{{ username }}"
-        group: "{{ username }}"
-
-    # - name: Add pyrefly to LSP servers
+    # - name: Add pyrefly to Mason ensure_installed
     #   ansible.builtin.lineinfile:
     #     path: /home/{{ username }}/.config/nvim/init.lua
-    #     regexp: "pyrefly = \\{\\}"
-    #     insertafter: "servers = \\{"
-    #     line: "          pyrefly = {},"
+    #     regexp: "ensure_installed = \\{.*'pyrefly'"
+    #     insertafter: "ensure_installed = \\{"
+    #     line: "        'pyrefly',"
     #     owner: "{{ username }}"
     #     group: "{{ username }}"
+
+    - name: Add pyrefly to LSP servers
+      ansible.builtin.lineinfile:
+        path: /home/{{ username }}/.config/nvim/init.lua
+        regexp: "pyrefly = \\{\\}"
+        insertafter: "servers = \\{"
+        line: "          pyrefly = {},"
+        owner: "{{ username }}"
+        group: "{{ username }}"
 
     # ── Set NeoVim as the default editor ───────────────────────
     - name: Set nvim as default editor in bashrc
