@@ -101,7 +101,7 @@
 
     - name: Comment out lua_ls in init.lua
       ansible.builtin.lineinfile:
-        path: ~/.config/nvim/init.lua
+        path: /home/{{ username }}/.config/nvim/init.lua
         regexp: '^(\s*)(?!\-\-)(lua_ls.*)'
         line: '\1-- \2'
         backrefs: yes
