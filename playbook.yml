@@ -68,25 +68,40 @@
         dest: /usr/local/bin/nvim
         state: link
 
-    # -- Neovim configuration
-    - name: Set space as leader key in init.lua
-      ansible.builtin.blockinfile:
-        path: /home/{{ username }}/.config/nvim/init.lua
-        marker: "-- {mark} LEADER KEY"
-        block: |
-          vim.g.mapleader = " "
-          vim.g.maplocalleader = " "
-        insertbefore: BOF
+    # -- Neovim configuration (kickstart.nvim)
+    - name: Check if kickstart.nvim is installed
+      ansible.builtin.stat:
+        path: /home/{{ username }}/.config/nvim/.kickstart.nvim
+      register: kickstart_marker
+
+    - name: Remove existing nvim config if kickstart not installed
+      ansible.builtin.file:
+        path: /home/{{ username }}/.config/nvim
+        state: absent
+      when: not kickstart_marker.stat.exists
+
+    - name: Clone kickstart.nvim
+      ansible.builtin.git:
+        repo: https://github.com/nvim-lua/kickstart.nvim.git
+        dest: /home/{{ username }}/.config/nvim
+        depth: 1
+      become_user: "{{ username }}"
+      when: not kickstart_marker.stat.exists
+
+    - name: Create kickstart marker file
+      ansible.builtin.file:
+        path: /home/{{ username }}/.config/nvim/.kickstart.nvim
+        state: touch
         owner: "{{ username }}"
         group: "{{ username }}"
+      when: not kickstart_marker.stat.exists
 
-    - name: Add Mason setup to init.lua
-      ansible.builtin.blockinfile:
+    - name: Configure nvim-cmp to accept with Ctrl+y
+      ansible.builtin.lineinfile:
         path: /home/{{ username }}/.config/nvim/init.lua
-        marker: "-- {mark} MASON SETUP"
-        block: |
-          require("mason").setup()
-          require("mason-lspconfig").setup()
+        regexp: "\\['<C-y>'\\] = cmp.mapping.confirm"
+        insertafter: "mapping = cmp.mapping.preset.insert"
+        line: "          ['<C-y>'] = cmp.mapping.confirm { select = true },"
         owner: "{{ username }}"
         group: "{{ username }}"
 
@@ -97,43 +112,14 @@
         creates: /home/{{ username }}/.local/bin/pyrefly
       become_user: "{{ username }}"
 
-    - name: Configure pyrefly LSP in LazyVim
-      ansible.builtin.copy:
-        dest: /home/{{ username }}/.config/nvim/lua/plugins/pyrefly.lua
+    - name: Configure pyrefly LSP in kickstart
+      ansible.builtin.lineinfile:
+        path: /home/{{ username }}/.config/nvim/init.lua
+        regexp: "pyrefly = \\{\\}"
+        insertafter: "servers = \\{"
+        line: "          pyrefly = {},"
         owner: "{{ username }}"
         group: "{{ username }}"
-        mode: "0644"
-        content: |
-          return {
-            {
-              "neovim/nvim-lspconfig",
-              opts = {
-                servers = {
-                  pyrefly = {},
-                },
-              },
-            },
-          }
-
-    - name: Configure nvim-cmp to accept with Ctrl+y
-      ansible.builtin.copy:
-        dest: /home/{{ username }}/.config/nvim/lua/plugins/cmp.lua
-        owner: "{{ username }}"
-        group: "{{ username }}"
-        mode: "0644"
-        content: |
-          return {
-            {
-              "hrsh7th/nvim-cmp",
-              opts = function(_, opts)
-                local cmp = require("cmp")
-                opts.mapping = vim.tbl_extend("force", opts.mapping or {}, {
-                  ["<C-y>"] = cmp.mapping.confirm({ select = true }),
-                })
-                return opts
-              end,
-            },
-          }
 
     # ── Set NeoVim as the default editor ───────────────────────
     - name: Set nvim as default editor in bashrc
