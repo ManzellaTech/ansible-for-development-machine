@@ -1,5 +1,5 @@
 ---
-- name: Set up development laptop
+- name: Set up development machine
   hosts: local
   become: true
 
@@ -14,12 +14,11 @@
 
     # ── Ubuntu Packages ──────────────────────────────────────────
     - name: Update apt cache
-      become: true
       ansible.builtin.apt:
         update_cache: true
+        cache_valid_time: 3600
 
     - name: Install packages
-      become: true
       ansible.builtin.apt:
         name:
           - ca-certificates
@@ -163,6 +162,7 @@
     #     name: code
     #     state: present
     #     update_cache: true
+    #     cache_valid_time: 3600
 
     # ── PowerShell ────────────────────────────────────────────
     - name: Download Microsoft repository keys package
@@ -186,6 +186,7 @@
         name: powershell
         state: present
         update_cache: true
+        cache_valid_time: 3600
 
     - name: Install Az PowerShell module
       ansible.builtin.command:
@@ -295,6 +296,7 @@
           - docker-compose-plugin
         state: present
         update_cache: true
+        cache_valid_time: 3600
 
     - name: Enable and start Docker service
       ansible.builtin.systemd:
