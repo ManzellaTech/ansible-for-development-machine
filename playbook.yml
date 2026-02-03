@@ -70,19 +70,7 @@
         dest: /usr/local/bin/nvim
         state: link
 
-    # ── LazyVim (Neovim configuration) ───────────────────────
-    - name: Clone LazyVim starter into Neovim config
-      ansible.builtin.git:
-        repo: https://github.com/LazyVim/starter.git
-        dest: /home/{{ username }}/.config/nvim
-        depth: 1
-      become_user: "{{ username }}"
-
-    - name: Remove .git directory from LazyVim starter
-      ansible.builtin.file:
-        path: /home/{{ username }}/.config/nvim/.git
-        state: absent
-
+    # -- Neovim configuration
     - name: Set space as leader key in init.lua
       ansible.builtin.blockinfile:
         path: /home/{{ username }}/.config/nvim/init.lua
