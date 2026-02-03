@@ -1,4 +1,9 @@
 ### Secrets ###
+*secrets*
+*vault*
+*credential*
+group_vars/
+*.code-workspace
 .env
 
 ### Ansible ###

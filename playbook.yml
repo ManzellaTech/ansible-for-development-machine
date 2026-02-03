@@ -14,10 +14,12 @@
 
     # ── Ubuntu Packages ──────────────────────────────────────────
     - name: Update apt cache
+      become: true
       ansible.builtin.apt:
         update_cache: true
 
     - name: Install packages
+      become: true
       ansible.builtin.apt:
         name:
           - ca-certificates
