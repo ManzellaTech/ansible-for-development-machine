@@ -32,6 +32,7 @@
           - fd-find
           - gcc
           - git
+          - luarocks
           - make
           - unzip
           - curl
@@ -39,6 +40,8 @@
           - wget
           - apt-transport-https
           - software-properties-common
+          - python3.13-venv
+          - xclip
         state: present
 
     # ── uv (Python package & project manager) ─────────────────
@@ -96,23 +99,24 @@
         group: "{{ username }}"
       when: not kickstart_marker.stat.exists
 
-    - name: Configure nvim-cmp to accept with Ctrl+y
+    - name: Comment out lua_ls in init.lua
+      ansible.builtin.lineinfile:
+        path: ~/.config/nvim/init.lua
+        regexp: '^(\s*)(?!\-\-)(lua_ls.*)'
+        line: '\1-- \2'
+        backrefs: yes
+
+    # ── Pyrefly LSP ──────────────────────────────────────────
+    - name: Add pyrefly to Mason ensure_installed
       ansible.builtin.lineinfile:
         path: /home/{{ username }}/.config/nvim/init.lua
-        regexp: "\\['<C-y>'\\] = cmp.mapping.confirm"
-        insertafter: "mapping = cmp.mapping.preset.insert"
-        line: "          ['<C-y>'] = cmp.mapping.confirm { select = true },"
+        regexp: "ensure_installed = \\{.*'pyrefly'"
+        insertafter: "ensure_installed = \\{"
+        line: "        'pyrefly',"
         owner: "{{ username }}"
         group: "{{ username }}"
 
-    # ── Pyrefly LSP ──────────────────────────────────────────
-    - name: Install pyrefly via uv
-      ansible.builtin.shell:
-        cmd: /snap/bin/uv tool install pyrefly
-        creates: /home/{{ username }}/.local/bin/pyrefly
-      become_user: "{{ username }}"
-
-    - name: Configure pyrefly LSP in kickstart
+    - name: Add pyrefly to LSP servers
       ansible.builtin.lineinfile:
         path: /home/{{ username }}/.config/nvim/init.lua
         regexp: "pyrefly = \\{\\}"
