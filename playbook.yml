@@ -166,27 +166,11 @@
     #     cache_valid_time: 3600
 
     # ── PowerShell ────────────────────────────────────────────
-    - name: Download Microsoft repository keys package
-      ansible.builtin.get_url:
-        url: "https://packages.microsoft.com/config/ubuntu/{{ ansible_distribution_version }}/packages-microsoft-prod.deb"
-        dest: /tmp/packages-microsoft-prod.deb
-        mode: "0644"
-
-    - name: Register Microsoft repository keys
-      ansible.builtin.command:
-        cmd: dpkg -i /tmp/packages-microsoft-prod.deb
-        creates: /etc/apt/sources.list.d/microsoft-prod.list
-
-    - name: Remove Microsoft repository keys file
-      ansible.builtin.file:
-        path: /tmp/packages-microsoft-prod.deb
-        state: absent
-
-    - name: Install PowerShell
-      ansible.builtin.apt:
+    - name: Install PowerShell via snap
+      community.general.snap:
         name: powershell
+        classic: true
         state: present
-        update_cache: true
 
     # ── JetBrainsMono Nerd Font ─────────────────────────────────
     - name: Ensure user fonts directory exists
