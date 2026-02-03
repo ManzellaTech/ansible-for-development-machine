@@ -42,13 +42,11 @@
         state: present
 
     # ── uv (Python package & project manager) ─────────────────
-    - name: Install uv via official installer
-      ansible.builtin.shell:
-        cmd: curl -LsSf https://astral.sh/uv/install.sh | sh
-        creates: /home/{{ username }}/.local/bin/uv
-      become_user: "{{ username }}"
-      environment:
-        INSTALLER_NO_MODIFY_PATH: "1"
+    - name: Install uv via snap
+      community.general.snap:
+        name: astral-uv
+        classic: true
+        state: present
 
     # ── Neovim ────────────────────────────────────────────────
     - name: Download Neovim release tarball
@@ -95,7 +93,7 @@
     # ── Pyrefly LSP ──────────────────────────────────────────
     - name: Install pyrefly via uv
       ansible.builtin.shell:
-        cmd: /home/{{ username }}/.local/bin/uv tool install pyrefly
+        cmd: /snap/bin/uv tool install pyrefly
         creates: /home/{{ username }}/.local/bin/pyrefly
       become_user: "{{ username }}"
 
