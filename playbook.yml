@@ -173,9 +173,9 @@
         mode: "0644"
 
     - name: Register Microsoft repository keys
-      ansible.builtin.apt:
-        deb: /tmp/packages-microsoft-prod.deb
-        state: present
+      ansible.builtin.command:
+        cmd: dpkg -i /tmp/packages-microsoft-prod.deb
+        creates: /etc/apt/sources.list.d/microsoft-prod.list
 
     - name: Remove Microsoft repository keys file
       ansible.builtin.file:
@@ -187,12 +187,6 @@
         name: powershell
         state: present
         update_cache: true
-        cache_valid_time: 3600
-
-    - name: Install Az PowerShell module
-      ansible.builtin.command:
-        cmd: pwsh -NoProfile -NonInteractive -Command "Install-Module -Name Az -Force -AcceptLicense -Scope AllUsers"
-        creates: /opt/microsoft/powershell/7/Modules/Az
 
     # ── JetBrainsMono Nerd Font ─────────────────────────────────
     - name: Ensure user fonts directory exists
