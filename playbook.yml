@@ -115,6 +115,26 @@
             },
           }
 
+    - name: Configure nvim-cmp to accept with Ctrl+y
+      ansible.builtin.copy:
+        dest: /home/{{ username }}/.config/nvim/lua/plugins/cmp.lua
+        owner: "{{ username }}"
+        group: "{{ username }}"
+        mode: "0644"
+        content: |
+          return {
+            {
+              "hrsh7th/nvim-cmp",
+              opts = function(_, opts)
+                local cmp = require("cmp")
+                opts.mapping = vim.tbl_extend("force", opts.mapping or {}, {
+                  ["<C-y>"] = cmp.mapping.confirm({ select = true }),
+                })
+                return opts
+              end,
+            },
+          }
+
     # ── Set NeoVim as the default editor ───────────────────────
     - name: Set nvim as default editor in bashrc
       ansible.builtin.lineinfile:
@@ -216,30 +236,10 @@
         depth: 1
       become_user: "{{ username }}"
 
-    - name: Symlink Gruvbox Dark theme
-      ansible.builtin.file:
-        src: /home/{{ username }}/.config/kitty/kitty-themes/themes/gruvbox_dark.conf
-        dest: /home/{{ username }}/.config/kitty/current-theme.conf
-        state: link
-        owner: "{{ username }}"
-        group: "{{ username }}"
-
     - name: Set Kitty as default terminal emulator
       community.general.alternatives:
         name: x-terminal-emulator
         path: /usr/bin/kitty
-
-    - name: Configure Kitty to use Gruvbox theme
-      ansible.builtin.copy:
-        dest: /home/{{ username }}/.config/kitty/kitty.conf
-        owner: "{{ username }}"
-        group: "{{ username }}"
-        mode: "0644"
-        content: |
-          include current-theme.conf
-          font_family JetBrainsMono Nerd Font
-        force: false
-
 
     # ── Docker ────────────────────────────────────────────────
     - name: Ensure /etc/apt/keyrings directory exists
