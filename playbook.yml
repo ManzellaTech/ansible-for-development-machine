@@ -51,17 +51,24 @@
         INSTALLER_NO_MODIFY_PATH: "1"
 
     # ── Neovim ────────────────────────────────────────────────
-    - name: Add Neovim stable PPA
-      ansible.builtin.apt_repository:
-        repo: ppa:neovim-ppa/stable
-        state: present
+    - name: Download Neovim release tarball
+      ansible.builtin.get_url:
+        url: https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.tar.gz
+        dest: /tmp/nvim-linux-x86_64.tar.gz
+        mode: '0644'
 
-    - name: Install Neovim
-      ansible.builtin.apt:
-        name: neovim
-        state: present
-        update_cache: true
-        cache_valid_time: 3600
+    - name: Extract Neovim to /opt
+      ansible.builtin.unarchive:
+        src: /tmp/nvim-linux-x86_64.tar.gz
+        dest: /opt
+        remote_src: true
+        creates: /opt/nvim-linux-x86_64
+
+    - name: Symlink nvim binary to /usr/local/bin
+      ansible.builtin.file:
+        src: /opt/nvim-linux-x86_64/bin/nvim
+        dest: /usr/local/bin/nvim
+        state: link
 
     # ── LazyVim (Neovim configuration) ───────────────────────
     - name: Clone LazyVim starter into Neovim config
