@@ -6,280 +6,41 @@
 
   tasks:
     # ── User ──────────────────────────────────────────────────
-    - name: "Create user {{ username }}"
-      ansible.builtin.user:
-        name: "{{ username }}"
-        shell: /bin/bash
-        create_home: true
-        state: present
+    - name: User setup
+      ansible.builtin.include_tasks: tasks/user.yml
 
     # ── Ubuntu Packages ──────────────────────────────────────────
-    - name: Update apt cache
-      ansible.builtin.apt:
-        update_cache: true
-        cache_valid_time: 3600
-
-    - name: Install packages
-      ansible.builtin.apt:
-        name:
-          - ca-certificates
-          - curl
-          - gnupg
-          - tree
-          - vim
-          - ripgrep
-          - fzf
-          - fd-find
-          - gcc
-          - git
-          - luarocks
-          - make
-          - unzip
-          - curl
-          - cargo
-          - wget
-          - apt-transport-https
-          - software-properties-common
-          - python3.13-venv
-          - xclip
-        state: present
+    - name: Ubuntu packages
+      ansible.builtin.include_tasks: tasks/packages.yml
 
     # ── uv (Python package & project manager) ─────────────────
-    - name: Install uv via snap
-      community.general.snap:
-        name: astral-uv
-        classic: true
-        state: present
+    - name: uv installation
+      ansible.builtin.include_tasks: tasks/uv.yml
 
     # ── Neovim ────────────────────────────────────────────────
-    - name: Download Neovim release tarball
-      ansible.builtin.get_url:
-        url: https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.tar.gz
-        dest: /tmp/nvim-linux-x86_64.tar.gz
-        mode: '0644'
-
-    - name: Extract Neovim to /opt
-      ansible.builtin.unarchive:
-        src: /tmp/nvim-linux-x86_64.tar.gz
-        dest: /opt
-        remote_src: true
-        creates: /opt/nvim-linux-x86_64
-
-    - name: Symlink nvim binary to /usr/local/bin
-      ansible.builtin.file:
-        src: /opt/nvim-linux-x86_64/bin/nvim
-        dest: /usr/local/bin/nvim
-        state: link
-
-    # -- Neovim configuration (kickstart.nvim)
-    - name: Check if kickstart.nvim is installed
-      ansible.builtin.stat:
-        path: /home/{{ username }}/.config/nvim/.kickstart.nvim
-      register: kickstart_marker
-
-    - name: Remove existing nvim config if kickstart not installed
-      ansible.builtin.file:
-        path: /home/{{ username }}/.config/nvim
-        state: absent
-      when: not kickstart_marker.stat.exists
-
-    - name: Clone kickstart.nvim
-      ansible.builtin.git:
-        repo: https://github.com/nvim-lua/kickstart.nvim.git
-        dest: /home/{{ username }}/.config/nvim
-        depth: 1
-      become_user: "{{ username }}"
-      when: not kickstart_marker.stat.exists
-
-    - name: Create kickstart marker file
-      ansible.builtin.file:
-        path: /home/{{ username }}/.config/nvim/.kickstart.nvim
-        state: touch
-        owner: "{{ username }}"
-        group: "{{ username }}"
-      when: not kickstart_marker.stat.exists
-
-    - name: Comment out 'lua_ls' entry in init.lua to avoid a Mason error
-      ansible.builtin.lineinfile:
-        path: /home/{{ username }}/.config/nvim/init.lua
-        regexp: '^(\s*)(?!\-\-)(''lua_ls'',)'
-        line: '\1-- \2'
-        backrefs: yes
-
-    - name: Add pyrefly to LSP servers
-      ansible.builtin.lineinfile:
-        path: /home/{{ username }}/.config/nvim/init.lua
-        regexp: "pyrefly = \\{\\}"
-        insertafter: "servers = \\{"
-        line: "          pyrefly = {},"
-        owner: "{{ username }}"
-        group: "{{ username }}"
-
-    # ── Set NeoVim as the default editor ───────────────────────
-    - name: Set nvim as default editor in bashrc
-      ansible.builtin.lineinfile:
-        path: /home/{{ username }}/.bashrc
-        line: export EDITOR=nvim
-        regexp: ^export EDITOR=
-        owner: "{{ username }}"
-        group: "{{ username }}"
-
-    - name: Set nvim as default visual editor in bashrc
-      ansible.builtin.lineinfile:
-        path: /home/{{ username }}/.bashrc
-        line: export VISUAL=nvim
-        regexp: ^export VISUAL=
-        owner: "{{ username }}"
-        group: "{{ username }}"
-
-    # Removing VS Code, this section has not been tested.
-    # # ── VS Code ───────────────────────────────────────────────
-    # - name: Install VS Code prerequisites
-    #   ansible.builtin.apt:
-    #     name:
-    #       - apt-transport-https
-    #       - wget
-    #       - gpg
-    #     state: present
-
-    # - name: Add Microsoft GPG key
-    #   ansible.builtin.shell:
-    #     cmd: wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /usr/share/keyrings/packages.microsoft.gpg
-    #     creates: /usr/share/keyrings/packages.microsoft.gpg
-
-    # - name: Set permissions on Microsoft GPG key
-    #   ansible.builtin.file:
-    #     path: /usr/share/keyrings/packages.microsoft.gpg
-    #     mode: "0644"
-
-    # - name: Add VS Code repository
-    #   ansible.builtin.apt_repository:
-    #     repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main"
-    #     filename: vscode
-    #     state: present
-
-    # - name: Install VS Code
-    #   ansible.builtin.apt:
-    #     name: code
-    #     state: present
-    #     update_cache: true
-    #     cache_valid_time: 3600
+    - name: Neovim installation and configuration
+      ansible.builtin.include_tasks: tasks/neovim.yml
 
     # ── PowerShell ────────────────────────────────────────────
-    - name: Install PowerShell via snap
-      community.general.snap:
-        name: powershell
-        classic: true
-        state: present
+    - name: PowerShell installation
+      ansible.builtin.include_tasks: tasks/powershell.yml
 
     # ── Obsidian ────────────────────────────────────────────
-    - name: Install Obsidian via snap
-      community.general.snap:
-        name: obsidian
-        classic: true
-        state: present
+    - name: Obsidian installation
+      ansible.builtin.include_tasks: tasks/obsidian.yml
 
     # ── JetBrainsMono Nerd Font ─────────────────────────────────
-    - name: Ensure user fonts directory exists
-      ansible.builtin.file:
-        path: /home/{{ username }}/.local/share/fonts
-        state: directory
-        owner: "{{ username }}"
-        group: "{{ username }}"
-        mode: "0755"
-
-    - name: Download JetBrainsMono Nerd Font
-      ansible.builtin.unarchive:
-        src: https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.tar.xz
-        dest: /home/{{ username }}/.local/share/fonts
-        remote_src: true
-        creates: /home/{{ username }}/.local/share/fonts/JetBrainsMonoNerdFont-Regular.ttf
-      become_user: "{{ username }}"
-
-    - name: Rebuild font cache
-      ansible.builtin.command:
-        cmd: fc-cache -fv /home/{{ username }}/.local/share/fonts
-      become_user: "{{ username }}"
-      changed_when: false
+    - name: Nerd Font installation
+      ansible.builtin.include_tasks: tasks/fonts.yml
 
     # ── Kitty terminal ─────────────────────────────────────────
-    - name: Install Kitty terminal
-      ansible.builtin.apt:
-        name: kitty
-        state: present
-
-    - name: Ensure Kitty config directory exists
-      ansible.builtin.file:
-        path: /home/{{ username }}/.config/kitty
-        state: directory
-        owner: "{{ username }}"
-        group: "{{ username }}"
-        mode: "0755"
-
-    - name: Clone Kitty themes repository
-      ansible.builtin.git:
-        repo: https://github.com/kovidgoyal/kitty-themes.git
-        dest: /home/{{ username }}/.config/kitty/kitty-themes
-        depth: 1
-      become_user: "{{ username }}"
-
-    - name: Set Kitty as default terminal emulator
-      community.general.alternatives:
-        name: x-terminal-emulator
-        path: /usr/bin/kitty
+    - name: Kitty terminal installation
+      ansible.builtin.include_tasks: tasks/kitty.yml
 
     # ── Docker ────────────────────────────────────────────────
-    - name: Ensure /etc/apt/keyrings directory exists
-      ansible.builtin.file:
-        path: /etc/apt/keyrings
-        state: directory
-        mode: "0755"
-
-    - name: Download Docker GPG key
-      ansible.builtin.get_url:
-        url: https://download.docker.com/linux/ubuntu/gpg
-        dest: /etc/apt/keyrings/docker.asc
-        mode: "0644"
-
-    - name: Add Docker repository in DEB822 format
-      ansible.builtin.copy:
-        dest: /etc/apt/sources.list.d/docker.sources
-        mode: "0644"
-        content: |
-          Types: deb
-          URIs: https://download.docker.com/linux/ubuntu
-          Suites: {{ ansible_facts['distribution_release'] }}
-          Components: stable
-          Signed-By: /etc/apt/keyrings/docker.asc
-
-    - name: Install Docker
-      ansible.builtin.apt:
-        name:
-          - docker-ce
-          - docker-ce-cli
-          - containerd.io
-          - docker-buildx-plugin
-          - docker-compose-plugin
-        state: present
-        update_cache: true
-        cache_valid_time: 3600
-
-    - name: Enable and start Docker service
-      ansible.builtin.systemd:
-        name: docker
-        enabled: true
-        state: started
-
-    - name: "Add {{ username }} to docker group"
-      ansible.builtin.user:
-        name: "{{ username }}"
-        groups: docker
-        append: true
+    - name: Docker installation
+      ansible.builtin.include_tasks: tasks/docker.yml
 
     # ── GNOME Settings ───────────────────────────────────────────
-    - name: Set screen timeout to 15 minutes
-      community.general.dconf:
-        key: /org/gnome/desktop/session/idle-delay
-        value: "uint32 900"
-        state: present
-      become_user: "{{ username }}"
+    - name: GNOME settings
+      ansible.builtin.include_tasks: tasks/gnome.yml

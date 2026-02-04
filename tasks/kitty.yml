@@ -1,0 +1,25 @@
+---
+- name: Install Kitty terminal
+  ansible.builtin.apt:
+    name: kitty
+    state: present
+
+- name: Ensure Kitty config directory exists
+  ansible.builtin.file:
+    path: /home/{{ username }}/.config/kitty
+    state: directory
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: "0755"
+
+- name: Clone Kitty themes repository
+  ansible.builtin.git:
+    repo: https://github.com/kovidgoyal/kitty-themes.git
+    dest: /home/{{ username }}/.config/kitty/kitty-themes
+    depth: 1
+  become_user: "{{ username }}"
+
+- name: Set Kitty as default terminal emulator
+  community.general.alternatives:
+    name: x-terminal-emulator
+    path: /usr/bin/kitty

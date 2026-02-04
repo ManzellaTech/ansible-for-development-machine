@@ -1,0 +1,6 @@
+---
+- name: Install uv via snap
+  community.general.snap:
+    name: astral-uv
+    classic: true
+    state: present

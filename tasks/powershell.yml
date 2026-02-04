@@ -1,0 +1,6 @@
+---
+- name: Install PowerShell via snap
+  community.general.snap:
+    name: powershell
+    classic: true
+    state: present

@@ -1,0 +1,7 @@
+---
+- name: Set screen timeout to 15 minutes
+  community.general.dconf:
+    key: /org/gnome/desktop/session/idle-delay
+    value: "uint32 900"
+    state: present
+  become_user: "{{ username }}"
