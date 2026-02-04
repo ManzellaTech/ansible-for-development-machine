@@ -4,3 +4,53 @@
     name: obsidian
     classic: true
     state: present
+
+- name: Create Obsidian vault directory
+  ansible.builtin.file:
+    path: /home/{{ username }}/Notes/Default
+    state: directory
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: "0755"
+
+- name: Extract .obsidian configuration to vault
+  ansible.builtin.unarchive:
+    src: "{{ playbook_dir }}/tasks/.obsidian.zip"
+    dest: /home/{{ username }}/Notes/Default
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    creates: /home/{{ username }}/Notes/Default/.obsidian
+
+- name: Ensure Obsidian config directory exists
+  ansible.builtin.file:
+    path: /home/{{ username }}/.config/obsidian
+    state: directory
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: "0755"
+
+- name: Configure Obsidian vault
+  ansible.builtin.copy:
+    dest: /home/{{ username }}/.config/obsidian/obsidian.json
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: "0644"
+    content: |
+      {
+        "vaults": {
+          "default": {
+            "path": "/home/{{ username }}/Notes/Default",
+            "ts": {{ ansible_date_time.epoch }}000,
+            "open": true
+          }
+        }
+      }
+
+- name: Open Obsidian at vault directory
+  ansible.builtin.command:
+    cmd: snap run obsidian obsidian://open?vault=Default
+  become_user: "{{ username }}"
+  environment:
+    DISPLAY: ":0"
+  changed_when: false
+  ignore_errors: true
