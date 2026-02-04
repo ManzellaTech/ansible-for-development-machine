@@ -23,7 +23,7 @@
 
 - name: Ensure Obsidian config directory exists
   ansible.builtin.file:
-    path: /home/{{ username }}/.config/obsidian
+    path: /home/{{ username }}/snap/obsidian/current/.config/obsidian
     state: directory
     owner: "{{ username }}"
     group: "{{ username }}"
@@ -31,7 +31,7 @@
 
 - name: Configure Obsidian vault
   ansible.builtin.copy:
-    dest: /home/{{ username }}/.config/obsidian/obsidian.json
+    dest: /home/{{ username }}/snap/obsidian/current/.config/obsidian/obsidian.json
     owner: "{{ username }}"
     group: "{{ username }}"
     mode: "0644"
