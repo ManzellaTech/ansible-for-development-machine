@@ -29,6 +29,14 @@
     group: "{{ username }}"
     mode: "0755"
 
+- name: Ensure Obsidian Daily Notes directory exists
+  ansible.builtin.file:
+    path: /home/{{ username }}/Notes/Default/Daily Notes
+    state: directory
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: "0755"
+
 - name: Configure Obsidian vault
   ansible.builtin.copy:
     dest: /home/{{ username }}/snap/obsidian/current/.config/obsidian/obsidian.json
