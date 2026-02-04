@@ -56,7 +56,7 @@
 
 - name: Open Obsidian at vault directory
   ansible.builtin.command:
-    cmd: snap run obsidian obsidian://open?vault=Default
+    cmd: snap run obsidian obsidian://open?vault=Default --disable-gpu
   become_user: "{{ username }}"
   environment:
     DISPLAY: ":0"
