@@ -23,3 +23,31 @@
   community.general.alternatives:
     name: x-terminal-emulator
     path: /usr/bin/kitty
+
+- name: Register custom keybinding for Kitty
+  community.general.dconf:
+    key: /org/gnome/settings-daemon/plugins/media-keys/custom-keybindings
+    value: "['/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/']"
+    state: present
+  become_user: "{{ username }}"
+
+- name: Set Kitty keybinding shortcut
+  community.general.dconf:
+    key: /org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/binding
+    value: "'<Control><Alt>t'"
+    state: present
+  become_user: "{{ username }}"
+
+- name: Set Kitty keybinding command
+  community.general.dconf:
+    key: /org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/command
+    value: "'/usr/bin/kitty'"
+    state: present
+  become_user: "{{ username }}"
+
+- name: Set Kitty keybinding name
+  community.general.dconf:
+    key: /org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/name
+    value: "'Kitty Terminal'"
+    state: present
+  become_user: "{{ username }}"
