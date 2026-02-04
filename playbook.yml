@@ -99,22 +99,12 @@
         group: "{{ username }}"
       when: not kickstart_marker.stat.exists
 
-    - name: Comment out 'lua_ls' entry in init.lua
+    - name: Comment out 'lua_ls' entry in init.lua to avoid a Mason error
       ansible.builtin.lineinfile:
         path: /home/{{ username }}/.config/nvim/init.lua
         regexp: '^(\s*)(?!\-\-)(''lua_ls'',)'
         line: '\1-- \2'
         backrefs: yes
-
-    # ── Pyrefly LSP ──────────────────────────────────────────
-    # - name: Add pyrefly to Mason ensure_installed
-    #   ansible.builtin.lineinfile:
-    #     path: /home/{{ username }}/.config/nvim/init.lua
-    #     regexp: "ensure_installed = \\{.*'pyrefly'"
-    #     insertafter: "ensure_installed = \\{"
-    #     line: "        'pyrefly',"
-    #     owner: "{{ username }}"
-    #     group: "{{ username }}"
 
     - name: Add pyrefly to LSP servers
       ansible.builtin.lineinfile:
@@ -179,6 +169,13 @@
     - name: Install PowerShell via snap
       community.general.snap:
         name: powershell
+        classic: true
+        state: present
+
+    # ── Obsidian ────────────────────────────────────────────
+    - name: Install Obsidian via snap
+      community.general.snap:
+        name: obsidian
         classic: true
         state: present
 
