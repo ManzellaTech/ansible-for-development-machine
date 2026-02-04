@@ -15,7 +15,7 @@
 
 - name: Extract .obsidian configuration to vault
   ansible.builtin.unarchive:
-    src: "{{ playbook_dir }}/tasks/.obsidian.zip"
+    src: "{{ playbook_dir }}/files/.obsidian.zip"
     dest: /home/{{ username }}/Notes/Default
     owner: "{{ username }}"
     group: "{{ username }}"
@@ -36,6 +36,22 @@
     owner: "{{ username }}"
     group: "{{ username }}"
     mode: "0755"
+
+- name: Ensure Obsidian Templates directory exists
+  ansible.builtin.file:
+    path: /home/{{ username }}/Notes/Default/Templates
+    state: directory
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: "0755"
+
+- name: Copy Daily Note Template
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/files/Daily Note Template.md"
+    dest: /home/{{ username }}/Notes/Default/Templates/Daily Note Template.md
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: "0644"
 
 - name: Configure Obsidian vault
   ansible.builtin.copy:
